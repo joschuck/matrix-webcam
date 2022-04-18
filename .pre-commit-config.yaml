@@ -15,4 +15,4 @@ repos:
     rev: ''  # Use the sha / tag you want to point at
     hooks:
       - id: mypy
-        args: [--no-strict-optional, --ignore-missing-imports]
+        args: [--config-file=setup.cfg, --no-strict-optional, --ignore-missing-imports]
