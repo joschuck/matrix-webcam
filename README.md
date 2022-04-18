@@ -9,20 +9,22 @@ This package displays your webcam video feed in the console.
 
 Take your next video conference from within the matrix!
 
-![matrix-webcam demo](doc/matrix-webcam.gif)
+![matrix-webcam demo](https://raw.githubusercontent.com/joschuck/matrix-webcam/main/doc/matrix-webcam.gif)
 
 ## Running it
 
-Make sure you have Python installed. Installing and running it from source:
-
-    $ cd matrix-webcam
-    $ python -m pip install -r requirements.txt
-    $ python -m matrix_webcam
-
-Installing using pip:
+Make sure you have Python and pip installed. Installation using pip:
 
     $ python -m pip install matrix-webcam
-    $ python -m matrix-webcam
+    $ matrix-webcam
+
+Installing and running it from source:
+
+    $ git clone https://github.com/joschuck/matrix-webcam.git
+    $ cd matrix-webcam
+    $ python -m pip install .
+    $ matrix-webcam
+
 
 ## Can I change the size or resolution
 
