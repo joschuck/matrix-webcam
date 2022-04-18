@@ -1,0 +1,1 @@
+ ffmpeg -i matrix-webcam.mp4 -ss 00:00:05 -to 00:00:09 -filter:v scale=720:-1 matrix-webcam.gif

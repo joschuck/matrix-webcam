@@ -1,0 +1,13 @@
+repos:
+- repo: https://github.com/ambv/black
+  rev: main  # fixme revert to stable once 'click' issue is fixed
+  hooks:
+  - id: black
+- repo: local
+  hooks:
+    - id: pylint
+      name: pylint
+      entry: pylint
+      language: system
+      types: [python]
+      args: []
