@@ -3,11 +3,12 @@ import argparse
 import os
 import cv2
 import numpy as np
+import numpy.typing as npt
 
 ASCII_CHARS = ["@", "#", "$", "%", "?", "*", "+", ";", ":", ",", "."]
 
 
-def ascii_image(image: np.typing.NDArray[np.uint8], width: int, height: int) -> str:
+def ascii_image(image: npt.NDArray[np.uint8], width: int, height: int) -> str:
     """Turns a numpy image into rich-CLI ascii image"""
     image = cv2.resize(image, (width, height))
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
