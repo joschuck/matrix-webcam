@@ -1,13 +1,18 @@
 repos:
-- repo: https://github.com/ambv/black
-  rev: main  # fixme revert to stable once 'click' issue is fixed
-  hooks:
-  - id: black
-- repo: local
-  hooks:
-    - id: pylint
-      name: pylint
-      entry: pylint
-      language: system
-      types: [python]
-      args: []
+  - repo: https://github.com/ambv/black
+    rev: main  # fixme revert to stable once 'click' issue is fixed
+    hooks:
+      - id: black
+  - repo: local
+    hooks:
+      - id: pylint
+        name: pylint
+        entry: pylint
+        language: system
+        types: [ python ]
+        args: [ ]
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: ''  # Use the sha / tag you want to point at
+    hooks:
+      - id: mypy
+        args: [--no-strict-optional, --ignore-missing-imports]

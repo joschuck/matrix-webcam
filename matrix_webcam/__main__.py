@@ -19,7 +19,7 @@ def ascii_image(image: np.ndarray, width: int, height: int) -> str:
     return ascii_str
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     """Parses width and height in characters from CLI."""
     parser = argparse.ArgumentParser(description="py-darts")
     parser.add_argument(
@@ -40,7 +40,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def show_matrix():
+def main() -> None:
     """Main loop."""
     args = parse_args()
     os.system("cls" if os.name == "nt" else "clear")
@@ -60,4 +60,4 @@ def show_matrix():
 
 
 if __name__ == "__main__":
-    show_matrix()
+    main()
