@@ -1,4 +1,4 @@
 pre-commit
 pylint
-black
+black~=22.3.0
 mypy

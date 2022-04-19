@@ -1,1 +1,2 @@
-opencv-python
+numpy~=1.20
+opencv-contrib-python~=4.5

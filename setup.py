@@ -14,7 +14,7 @@ LICENSE = (HERE / "LICENSE").read_text()
 # This call to setup() does all the work
 setup(
     name="matrix-webcam",
-    version="0.1.1",
+    version="0.1.2",
     description="Displays your webcam video feed in the console.",
     long_description=README,
     long_description_content_type="text/markdown",
@@ -29,9 +29,9 @@ setup(
     ],
     packages=["matrix_webcam"],
     include_package_data=True,
-    install_requires=["opencv-python"],
+    install_requires=["numpy~=1.20", "opencv-contrib-python~=4.5"],
     extras_require={
-        "dev": ["pre-commit", "pylint", "black", "mypy"],
+        "dev": ["pre-commit", "pylint", "black~=22.3.0", "mypy"],
     },
     keywords="matrix webcam opencv",
     entry_points={"console_scripts": ["matrix-webcam=matrix_webcam.__main__:main"]},
