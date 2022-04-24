@@ -14,7 +14,7 @@ LICENSE = (HERE / "LICENSE").read_text()
 # This call to setup() does all the work
 setup(
     name="matrix-webcam",
-    version="0.1.2",
+    version="0.3.0",
     description="Displays your webcam video feed in the console.",
     long_description=README,
     long_description_content_type="text/markdown",
