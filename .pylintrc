@@ -371,7 +371,7 @@ contextmanager-decorators=contextlib.contextmanager
 # List of members which are set dynamically and missed by pylint inference
 # system, and so shouldn't trigger E1101 when accessed. Python regular
 # expressions are accepted.
-generated-members=
+generated-members=curses
 
 # Tells whether missing members accessed in mixin class should be ignored. A
 # class is considered mixin if its name matches the mixin-class-rgx option.
@@ -499,10 +499,10 @@ max-attributes=7
 max-bool-expr=5
 
 # Maximum number of branch for function / method body.
-max-branches=12
+max-branches=15
 
 # Maximum number of locals for function / method body.
-max-locals=15
+max-locals=30
 
 # Maximum number of parents for a class (see R0901).
 max-parents=7
@@ -514,7 +514,7 @@ max-public-methods=20
 max-returns=6
 
 # Maximum number of statements in function / method body.
-max-statements=50
+max-statements=70
 
 # Minimum number of public methods for a class (see R0903).
 min-public-methods=1

@@ -9,7 +9,7 @@ This package displays your webcam video feed in the console.
 
 Take your next video conference from within the matrix!
 
-![matrix-webcam demo](https://raw.githubusercontent.com/joschuck/matrix-webcam/main/doc/matrix-webcam.gif)
+![matrix-webcam demo](https://raw.githubusercontent.com/joschuck/matrix-webcam/main/doc/matrix-webcam02.gif)
 
 ## Running it
 
