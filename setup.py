@@ -29,7 +29,12 @@ setup(
     ],
     packages=["matrix_webcam"],
     include_package_data=True,
-    install_requires=["numpy~=1.20", "opencv-contrib-python~=4.5", "mediapipe~=0.8"],
+    install_requires=[
+        "numpy~=1.20",
+        "opencv-contrib-python~=4.5",
+        "mediapipe~=0.8",
+        'windows-curses~=2.3; platform_system=="Windows"',
+    ],
     extras_require={
         "dev": ["pre-commit", "pylint", "black~=22.3.0", "mypy"],
     },
