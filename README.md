@@ -25,13 +25,6 @@ Installing and running it from source:
     $ python -m pip install .
     $ matrix-webcam
 
-
-## Can I change the size or resolution
-
-Yes! Just add the desired width and height in characters to the command, i.e.
-
-    $ python main.py 120 30
-
 ## Can I use this for Teams/Zoom/Skype etc.? 
 
 Yes! You can for example use [OBS Studio](https://obsproject.com/) together with the [Virtual webcam plugin](https://github.com/Fenrirthviti/obs-virtual-cam/releases).

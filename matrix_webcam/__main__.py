@@ -31,23 +31,7 @@ def ascii_image(
 
 def parse_args() -> argparse.Namespace:
     """Parses width and height in characters from CLI."""
-    parser = argparse.ArgumentParser(description="py-darts")
-    parser.add_argument(
-        "width",
-        nargs="?",
-        default=120,
-        type=int,
-        help="Width of the video in characters.",
-    )
-
-    parser.add_argument(
-        "height",
-        nargs="?",
-        default=30,
-        type=int,
-        help="Height of the video in characters.",
-    )
-
+    parser = argparse.ArgumentParser(description="matrix-webcam")
     parser.add_argument(
         "-l",
         "--letters",
