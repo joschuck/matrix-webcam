@@ -1,6 +1,7 @@
 """Shows your webcam video - Matrix style"""
 import argparse
 import random
+import signal
 import time
 from string import printable
 from typing import Optional, Any
@@ -59,8 +60,18 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     """Main loop."""
     args = parse_args()
+
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        print("No VideoCapture found!")
+        cap.release()
+        return
+
     # os.system("cls" if os.name == "nt" else "clear")
     stdscr = init_curses()
+
+    signal.signal(signal.SIGINT, lambda signal, frame: terminate(cap, stdscr))
+
     size = stdscr.getmaxyx()
     height, width = size
 
@@ -75,7 +86,6 @@ def main() -> None:
     bg_refresh_counter = random.randint(3, 7)
     perf_counter = time.perf_counter()
 
-    cap = cv2.VideoCapture(0)
     bg_image: Optional[npt.NDArray[np.uint8]] = None
     with SelfieSegmentation(model_selection=1) as selfie_segmentation:
         while cap.isOpened():
@@ -156,12 +166,17 @@ def main() -> None:
 
             stdscr.nodelay(True)  # Don't block waiting for input.
             char_input = stdscr.getch()
-            if cv2.waitKey(1) & 0xFF == 27 or char_input in (3, 26):
+            if cv2.waitKey(1) & 0xFF == 27 or char_input in (3, 27):  # ESC pressed
                 break
 
+    terminate(cap, stdscr)
+
+
+def terminate(cap: Any, stdscr: Any) -> None:
+    """# OpenCV and curses shutdown"""
     cap.release()
     cv2.destroyAllWindows()
-    curses.nocbreak()
+
     stdscr.keypad(False)
     curses.echo()
     curses.endwin()
@@ -170,10 +185,9 @@ def main() -> None:
 def init_curses() -> Any:
     """Initializes curses library"""
     stdscr = curses.initscr()
-    curses.curs_set(0)
-    curses.nocbreak()
-    stdscr.keypad(True)
-    curses.echo()
+    curses.curs_set(False)  # no blinking cursor
+    stdscr.keypad(True)  # if not set will end program on arrow keys etc
+    curses.noecho()  # do not echo keypress
 
     curses.start_color()
     curses.use_default_colors()

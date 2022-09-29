@@ -30,5 +30,20 @@ Installing and running it from source:
 Yes! You can for example use [OBS Studio](https://obsproject.com/) together with the [Virtual webcam plugin](https://github.com/Fenrirthviti/obs-virtual-cam/releases).
 Then all you need to do is select the virtual webcam in Teams/Zoom/Skype.
 
+## Development
+
+I'd recommend creating a new virtual environment (if you are under Ubuntu install it using `sudo apt install python3-venv` using 
+
+    $ python3 -m venv venv/
+    $ source venv/bin/activate
+
+Then install the dependencies using:
+
+    $ pip install -e .[dev,deploy]
+
+Setup pre-commit, too:
+
+    $ pre-commit install
+
 ## License
 This project is licensed under the MIT License (see the `LICENSE` file for details).

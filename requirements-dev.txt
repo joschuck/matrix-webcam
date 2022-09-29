@@ -1,4 +1,0 @@
-pre-commit
-pylint
-black~=22.3.0
-mypy

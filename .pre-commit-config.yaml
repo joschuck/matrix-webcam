@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/ambv/black
-    rev: main  # fixme revert to stable once 'click' issue is fixed
+    rev: stable
     hooks:
       - id: black
   - repo: local
@@ -12,7 +12,7 @@ repos:
         types: [ python ]
         args: [ ]
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: ''  # Use the sha / tag you want to point at
+    rev: v0.981
     hooks:
       - id: mypy
         args: [--config-file=setup.cfg, --no-strict-optional, --ignore-missing-imports]
