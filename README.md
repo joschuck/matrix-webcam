@@ -45,5 +45,12 @@ Setup pre-commit, too:
 
     $ pre-commit install
 
+### TODO
+
+* [ ] Move to opencv-python-headless
+* [ ] add tests
+* [ ] add webcam selection
+* 
+
 ## License
 This project is licensed under the MIT License (see the `LICENSE` file for details).
