@@ -15,7 +15,7 @@ Take your next video conference from within the matrix!
 
 Make sure you have Python and pip installed. Installation using pip:
 
-    $ pip install matrix-webcam  # make sure it's in your PATH for it to run
+    $ pip install matrix-webcam  # make sure it's in your PATH for it to run, alternatively use sudo
     $ matrix-webcam
 
 Installing and running it from source:
@@ -28,8 +28,8 @@ Installing and running it from source:
 ## Can I use this for Teams/Zoom/Skype etc.? 
 
 ### For Windows/Mac Users
-Yes! You can for example use [OBS Studio](https://obsproject.com/) together with the [Virtual webcam plugin](https://github.com/Fenrirthviti/obs-virtual-cam/releases).
-Then all you need to do is select the virtual webcam in Teams/Zoom/Skype.
+Yes! You can for example use [OBS Studio](https://obsproject.com/) ~~ together with the [Virtual Cam plugin](https://github.com/CatxFish/obs-virtual-cam) ~~ . Notice: obs-studio have officially provided virtual camera feature since version 26.0.0 , you can use it without installing this plugin.
+Then all you need to do is select the virtual webcam in Teams/Zoom/Skype. 
 
 ### For Linux Users
 First we need to make sure you have the [v4l2loopback kernel module](https://github.com/umlaeute/v4l2loopback) to create V4L2 loopback devices setup.
@@ -63,6 +63,7 @@ Now launch the virtual device in terminal (2)
 
 
 That's it, your webcam should show up in Chromium, Teams, etc.!
+
 
 ## Development
 
