@@ -25,6 +25,8 @@ Installing and running it from source:
     $ python -m pip install .
     $ matrix-webcam
 
+Tip: Shrink your font size, it will look even more hacky
+
 ## Can I use this for Teams/Zoom/Skype etc.? 
 
 ### For Windows/Mac Users
