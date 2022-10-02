@@ -34,6 +34,13 @@ def parse_args() -> argparse.Namespace:
     """Parses width and height in characters from CLI."""
     parser = argparse.ArgumentParser(description="matrix-webcam")
     parser.add_argument(
+        "-d",
+        "--device",
+        type=int,
+        default=0,
+        help="Sets the index of the webcam if you have more than one webcam.",
+    )
+    parser.add_argument(
         "-l",
         "--letters",
         type=int,
@@ -61,7 +68,7 @@ def main() -> None:
     """Main loop."""
     args = parse_args()
 
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(args.device)
     if not cap.isOpened():
         print("No VideoCapture found!")
         cap.release()

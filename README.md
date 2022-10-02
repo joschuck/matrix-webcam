@@ -31,11 +31,12 @@ Tip: Shrink your font size, it will look even more hacky
     
     options:
     -h, --help            show this help message and exit
+    -d DEVICE, --device DEVICE
+                        Sets the index of the webcam if you have more than one webcam.
     -l LETTERS, --letters LETTERS
                         The number of letters produced per update.
     -p PROBABILITY, --probability PROBABILITY
-                        1/p probability of a dispense point deactivating each
-                        tick.
+                        1/p probability of a dispense point deactivating each tick.
     -u UPDATES_PER_SECOND, --updates-per-second UPDATES_PER_SECOND
                         The number of updates to perform per second.
 
@@ -97,9 +98,9 @@ Setup pre-commit, too:
 ### TODO
 
 * [x] Add Virtual webcam documentation for Linux/Gstreamer
+* [x] add webcam selection
 * [ ] Move to opencv-python-headless
 * [ ] add tests
-* [ ] add webcam selection
 
 ## License
 This project is licensed under the MIT License (see the `LICENSE` file for details).
