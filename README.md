@@ -72,10 +72,9 @@ Now launch matrix-webcam
 
     $ matrix-webcam  # in the terminal that was just resized
 
-Now launch the virtual device in terminal (2) - you need [Gstreamer](https://gstreamer.freedesktop.org/documentation/installing/?gi-language=c) for this, check the link on how to install it 
+Now launch the virtual device in terminal (2) - you need [Gstreamer](https://gstreamer.freedesktop.org/documentation/installing/on-linux.html?gi-language=c) for this, check the link on how to install it 
 
     $ gst-launch-1.0 ximagesrc xid=79869947 ! video/x-raw,framerate=30/1 ! videoconvert ! video/x-raw,format=YUY2 ! v4l2sink device=/dev/video42
-
 
 That's it, your webcam should show up in Chromium, Teams, etc.!
 
