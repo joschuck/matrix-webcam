@@ -32,7 +32,8 @@ setup(
     install_requires=[
         "numpy~=1.20",
         "opencv-contrib-python~=4.5.4",  # pylint goes bananas with 4.6.xxx
-        "mediapipe~=0.8",
+        'mediapipe-silicon~=0.8; platform_system=="Darwin" and platform.machine=="arm64"',
+        'mediapipe~=0.8',
         'windows-curses~=2.3; platform_system=="Windows"',
     ],
     extras_require={
