@@ -27,6 +27,19 @@ Installing and running it from source:
 
 Tip: Shrink your font size, it will look even more hacky
 
+    usage: matrix-webcam [-h] [-l LETTERS] [-p PROBABILITY] [-u UPDATES_PER_SECOND]
+    
+    options:
+    -h, --help            show this help message and exit
+    -l LETTERS, --letters LETTERS
+                        The number of letters produced per update.
+    -p PROBABILITY, --probability PROBABILITY
+                        1/p probability of a dispense point deactivating each
+                        tick.
+    -u UPDATES_PER_SECOND, --updates-per-second UPDATES_PER_SECOND
+                        The number of updates to perform per second.
+
+
 ## Can I use this for Teams/Zoom/Skype etc.? 
 
 ### For Windows/Mac Users
