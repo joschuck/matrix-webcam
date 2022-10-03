@@ -1,5 +1,6 @@
 # matrix-webcam
 
+[![PyPI version](https://badge.fury.io/py/matrix-webcam.svg)](https://badge.fury.io/py/matrix-webcam)
 [![License MIT](https://img.shields.io/github/license/joschuck/matrix-webcam.svg)](https://github.com/joschuck/matrix-webcam/blob/main/LICENSE)
 [![issues](https://img.shields.io/github/issues/joschuck/matrix-webcam.svg)](https://github.com/joschuck/matrix-webcam/issues)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
