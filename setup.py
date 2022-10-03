@@ -1,5 +1,6 @@
 """Setup script for matrix-webcam"""
 
+import platform
 import pathlib
 from setuptools import setup
 
@@ -14,7 +15,7 @@ LICENSE = (HERE / "LICENSE").read_text()
 # This call to setup() does all the work
 setup(
     name="matrix-webcam",
-    version="0.4.1",
+    version="0.4.2",
     description="Displays your webcam video feed in the console.",
     long_description=README,
     long_description_content_type="text/markdown",
@@ -32,10 +33,13 @@ setup(
     install_requires=[
         "numpy~=1.20",
         "opencv-contrib-python~=4.5.4",  # pylint goes bananas with 4.6.xxx
-        'mediapipe-silicon~=0.8; platform_system=="Darwin" and platform.machine=="arm64"',
-        'mediapipe~=0.8',
-        'windows-curses~=2.3; platform_system=="Windows"',
-    ],
+        "windows-curses~=2.3; platform_system == 'Windows'",
+    ]
+    + (
+        ["mediapipe-silicon~=0.8"]
+        if platform.system() == "Darwin" and platform.machine() == "arm64"
+        else ["mediapipe~=0.8"]
+    ),
     extras_require={
         "dev": ["pre-commit", "pylint", "black~=22.3.0", "mypy"],
         "deploy": ["wheel", "twine", "build", "setuptools"],
