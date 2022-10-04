@@ -5,6 +5,7 @@ import signal
 import time
 from string import printable
 from typing import Optional, Any
+from itertools import chain
 
 import _curses
 import cv2
@@ -16,19 +17,15 @@ curses: Any = _curses  # ignore mypy
 ASCII_CHARS = np.array([" ", "@", "#", "$", "%", "?", "*", "+", ";", ":", ",", "."])
 
 
-def ascii_image(
+def ascii_image2(
     image: npt.NDArray[np.uint8], width: int, height: int, linebreak: bool = False
 ) -> str:
     """Turns a numpy image into rich-CLI ascii image"""
     gray = cv2.cvtColor(cv2.resize(image, (width, height)), cv2.COLOR_BGR2GRAY)
     gray = (gray / (256 / len(ASCII_CHARS))).astype(int)
     gray = np.ascontiguousarray(np.take(ASCII_CHARS, gray))
-    gray = gray.view(f"U{width}")
-    if linebreak:
-        return "\n".join(gray.ravel())
-    else:
-        return "".join(gray.ravel())
-
+    return gray.ravel()[:-1]
+    
 
 def parse_args() -> argparse.Namespace:
     """Parses width and height in characters from CLI."""
@@ -85,13 +82,16 @@ def main() -> None:
     # background is a matrix of the actual letters (not lit up) -- the underlay.
     # foreground is a binary matrix representing the position of lit letters -- the overlay.
     # dispense is where new 'streams' of lit letters appear from.
-    background = rand_string(printable.strip(), width * height)
+    printable_chars = printable.strip()
+    background = rand_string(printable_chars, width * height)
     foreground: list[tuple[int, int]] = []
     dispense: list[int] = []
 
     delta = 0
     bg_refresh_counter = random.randint(3, 7)
     perf_counter = time.perf_counter()
+    frame_counter = 0
+    time_counter = time.monotonic_ns()
 
     bg_image: Optional[npt.NDArray[np.uint8]] = None
     with SelfieSegmentation(model_selection=1) as selfie_segmentation:
@@ -129,10 +129,8 @@ def main() -> None:
 
             stdscr.clear()
 
-            string = ascii_image(output_image, width, height)[:-1]
+            string = ascii_image2(output_image, width, height)
             for idx, val in enumerate(string):
-                if not val:
-                    continue
                 stdscr.addstr(idx // width, idx % width, val, curses.color_pair(1))
 
             now = time.perf_counter()
@@ -140,6 +138,7 @@ def main() -> None:
             perf_counter = now
             update_matrix = delta >= 1
 
+            foreground2 = []
             for idx, (row, col) in enumerate(foreground):
                 if row < size[0] - 1:
                     stdscr.addstr(
@@ -150,26 +149,36 @@ def main() -> None:
                     )
 
                     if update_matrix:
-                        foreground[idx] = (row + 1, col)
-                else:
-                    del foreground[idx]
+                        foreground2.append((row + 1, col))
+                    else:
+                        foreground2.append((row, col))
+            foreground = foreground2
 
             if update_matrix:
-                for _ in range(abs(args.letters)):
-                    dispense.append(random.randint(0, width - 1))
-
-                for idx, column in enumerate(dispense):
+                dispense_new = random.choices(range(0, width), k=abs(args.letters))
+                dispense2 = []
+                for idx, column in enumerate(chain(dispense, dispense_new)):
                     foreground.append((0, column))
-                    if not random.randint(0, args.probability - 1):
-                        del dispense[idx]
+                    if random.randint(0, args.probability - 1):
+                        dispense2.append(column)
+                dispense = dispense2
                 delta -= 1
 
             bg_refresh_counter -= 1
             if bg_refresh_counter <= 0:
-                background = rand_string(printable.strip(), height * width)
+                background = rand_string(printable_chars, height * width)
                 bg_refresh_counter = random.randint(3, 7)
 
             stdscr.refresh()
+            frame_counter += 1
+
+            # compute fps
+            curr = time.monotonic_ns()
+            if curr - time_counter > 1e9:
+                fps = frame_counter / (curr - time_counter) * 1e9
+                stdscr.addstr(0, 0, f"FPS: {fps}")
+                time_counter = curr
+                frame_counter = 0
 
             stdscr.nodelay(True)  # Don't block waiting for input.
             char_input = stdscr.getch()
@@ -184,6 +193,7 @@ def terminate(cap: Any, stdscr: Any) -> None:
     cap.release()
     cv2.destroyAllWindows()
 
+    curses.curs_set(True)
     stdscr.keypad(False)
     curses.echo()
     curses.endwin()
@@ -202,13 +212,13 @@ def init_curses() -> Any:
     return stdscr
 
 
-def rand_string(character_set: str, length: int) -> str:
+def rand_string(character_set: str, length: int) -> list:
     """
     Returns a random string.
     character_set -- the characters to choose from.
     length        -- the length of the string.
     """
-    return "".join(random.choice(character_set) for _ in range(length))
+    return random.choices(character_set, k=length)
 
 
 if __name__ == "__main__":
