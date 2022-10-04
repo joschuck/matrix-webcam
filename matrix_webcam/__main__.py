@@ -13,21 +13,21 @@ import numpy.typing as npt
 from mediapipe.python.solutions.selfie_segmentation import SelfieSegmentation
 
 curses: Any = _curses  # ignore mypy
-ASCII_CHARS = [" ", "@", "#", "$", "%", "?", "*", "+", ";", ":", ",", "."]
+ASCII_CHARS = np.array([" ", "@", "#", "$", "%", "?", "*", "+", ";", ":", ",", "."])
 
 
 def ascii_image(
     image: npt.NDArray[np.uint8], width: int, height: int, linebreak: bool = False
 ) -> str:
     """Turns a numpy image into rich-CLI ascii image"""
-    image = cv2.resize(image, (width, height))
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    ascii_str = ""
-    for (_, x), pixel in np.ndenumerate(gray):  # pylint: disable=C0103
-        ascii_str += ASCII_CHARS[int(pixel / (256 / len(ASCII_CHARS)))]
-        if linebreak and x == image.shape[1] - 1:
-            ascii_str += "\n"
-    return ascii_str
+    gray = cv2.cvtColor(cv2.resize(image, (width, height)), cv2.COLOR_BGR2GRAY)
+    gray = (gray / (256 / len(ASCII_CHARS))).astype(int)
+    gray = np.ascontiguousarray(np.take(ASCII_CHARS, gray))
+    gray = gray.view(f"U{width}")
+    if linebreak:
+        return "\n".join(gray.ravel())
+    else:
+        return "".join(gray.ravel())
 
 
 def parse_args() -> argparse.Namespace:
