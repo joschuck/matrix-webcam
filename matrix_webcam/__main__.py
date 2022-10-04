@@ -25,7 +25,7 @@ def ascii_image2(
     gray = (gray / (256 / len(ASCII_CHARS))).astype(int)
     gray = np.ascontiguousarray(np.take(ASCII_CHARS, gray))
     return gray.ravel()[:-1]
-    
+
 
 def parse_args() -> argparse.Namespace:
     """Parses width and height in characters from CLI."""
@@ -57,6 +57,12 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=15,
         help="The number of updates to perform per second.",
+    )
+    parser.add_argument(
+        "--fps",
+        action="store_true",
+        default=False,
+        help="Display FPS counter"
     )
     return parser.parse_args()
 
@@ -92,6 +98,7 @@ def main() -> None:
     perf_counter = time.perf_counter()
     frame_counter = 0
     time_counter = time.monotonic_ns()
+    fps = 0
 
     bg_image: Optional[npt.NDArray[np.uint8]] = None
     with SelfieSegmentation(model_selection=1) as selfie_segmentation:
@@ -176,9 +183,11 @@ def main() -> None:
             curr = time.monotonic_ns()
             if curr - time_counter > 1e9:
                 fps = frame_counter / (curr - time_counter) * 1e9
-                stdscr.addstr(0, 0, f"FPS: {fps}")
                 time_counter = curr
                 frame_counter = 0
+            if args.fps:
+                stdscr.addstr(0, 0, f"FPS: {round(fps, 3)}")
+
 
             stdscr.nodelay(True)  # Don't block waiting for input.
             char_input = stdscr.getch()
