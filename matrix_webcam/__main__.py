@@ -104,9 +104,15 @@ def main() -> None:
 
 
     #pre-allocate some arrays
+    # Source image array
     _, image = cap.read()
+
+    # Segmentation resolution arrays
+    imageseg = np.empty((144, 256, 3), dtype=np.uint8)
+    condition = np.empty((144, 256), dtype=bool)
+
+    # Final resolution arrays
     imager = np.empty((height, width, 3), dtype=np.uint8)
-    imageseg = np.empty_like(imager)
     gray = np.empty((height, width), dtype=np.uint8)
 
     with SelfieSegmentation(model_selection=1) as selfie_segmentation:
@@ -116,29 +122,24 @@ def main() -> None:
             if not success:
                 print("Ignoring empty camera frame.")
                 continue
+            image = cv2.flip(image, 1, image)
 
             # Resize image to target resolution
-            imager = cv2.resize(image, (width, height), imager)
-            # Flip image horizontally
-            imager = cv2.flip(imager, 1, imager)
+            imageseg = cv2.resize(image, (256, 144), imager)
 
             # Convert to RGB for Selfie segmentation
-            imageseg.flags.writeable = True
-            imageseg = cv2.cvtColor(imager, cv2.COLOR_BGR2RGB, imageseg)
+            imageseg = cv2.cvtColor(imageseg, cv2.COLOR_BGR2RGB)
             # To improve performance, optionally mark the image as not writeable to
             # pass by reference.
             imageseg.flags.writeable = False
             results = selfie_segmentation.process(imageseg)
+            imageseg.flags.writeable = True
+            np.less_equal(results.segmentation_mask, 0.95, out=condition)
+            np.copyto(imageseg, 0, where=condition[:, :, np.newaxis])
 
             # Create grayscale image
-            gray = cv2.cvtColor(imager, cv2.COLOR_BGR2GRAY, gray)
-
-            # Resize and generate segmentation mask
-            condition = cv2.resize(results.segmentation_mask, (width, height), imageseg)
-            condition = condition <= 0.95
-            
-            # Copy background over image according to the segmentation
-            np.copyto(gray, 0, casting='no', where=condition)
+            imager = cv2.resize(imageseg, (width, height), imageseg)
+            gray = cv2.cvtColor(imager, cv2.COLOR_RGB2GRAY, gray)
 
             stdscr.clear()
 
