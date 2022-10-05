@@ -5,6 +5,7 @@ import signal
 import time
 from string import printable
 from typing import Optional, Any
+from itertools import chain
 
 import _curses
 import cv2
@@ -13,21 +14,23 @@ import numpy.typing as npt
 from mediapipe.python.solutions.selfie_segmentation import SelfieSegmentation
 
 curses: Any = _curses  # ignore mypy
-ASCII_CHARS = [" ", "@", "#", "$", "%", "?", "*", "+", ";", ":", ",", "."]
+ASCII_CHARS = np.array([" ", "@", "#", "$", "%", "?", "*", "+", ";", ":", ",", "."])
 
 
-def ascii_image(
-    image: npt.NDArray[np.uint8], width: int, height: int, linebreak: bool = False
+def ascii_image2(
+    image: npt.NDArray[np.uint8]
 ) -> str:
     """Turns a numpy image into rich-CLI ascii image"""
-    image = cv2.resize(image, (width, height))
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    ascii_str = ""
-    for (_, x), pixel in np.ndenumerate(gray):  # pylint: disable=C0103
-        ascii_str += ASCII_CHARS[int(pixel / (256 / len(ASCII_CHARS)))]
-        if linebreak and x == image.shape[1] - 1:
-            ascii_str += "\n"
-    return ascii_str
+    gray = (image / (256 / len(ASCII_CHARS))).astype('uint8')
+    gray = np.ascontiguousarray(np.take(ASCII_CHARS, gray))
+    return gray
+
+
+def interp_method(source, dst):
+    if source > dst:
+        return cv2.INTER_AREA
+    else:
+        return cv2.INTER_LINEAR
 
 
 def parse_args() -> argparse.Namespace:
@@ -61,6 +64,12 @@ def parse_args() -> argparse.Namespace:
         default=15,
         help="The number of updates to perform per second.",
     )
+    parser.add_argument(
+        "--fps",
+        action="store_true",
+        default=False,
+        help="Display FPS counter"
+    )
     return parser.parse_args()
 
 
@@ -69,6 +78,7 @@ def main() -> None:
     args = parse_args()
 
     cap = cv2.VideoCapture(args.device)
+
     if not cap.isOpened():
         print("No VideoCapture found!")
         cap.release()
@@ -76,6 +86,8 @@ def main() -> None:
 
     # os.system("cls" if os.name == "nt" else "clear")
     stdscr = init_curses()
+    addstr = stdscr.addstr
+    pair1 = curses.color_pair(1)
 
     signal.signal(signal.SIGINT, lambda signal, frame: terminate(cap, stdscr))
 
@@ -85,91 +97,112 @@ def main() -> None:
     # background is a matrix of the actual letters (not lit up) -- the underlay.
     # foreground is a binary matrix representing the position of lit letters -- the overlay.
     # dispense is where new 'streams' of lit letters appear from.
-    background = rand_string(printable.strip(), width * height)
+    printable_chars = printable.strip()
+    background = rand_string(printable_chars, width * height)
     foreground: list[tuple[int, int]] = []
     dispense: list[int] = []
 
     delta = 0
     bg_refresh_counter = random.randint(3, 7)
     perf_counter = time.perf_counter()
+    frame_counter = 0
+    time_counter = time.monotonic_ns()
+    fps = 0
 
-    bg_image: Optional[npt.NDArray[np.uint8]] = None
+
+    #pre-allocate some arrays
+    # Source image array
+    _, image = cap.read()
+
+    # Segmentation resolution arrays
+    imageseg = np.empty((144, 256, 3), dtype=np.uint8)
+    condition = np.empty((144, 256), dtype=bool)
+
+    # Final resolution arrays
+    imager = np.empty((height, width, 3), dtype=np.uint8)
+    gray = np.empty((height, width), dtype=np.uint8)
+    interp = interp_method((144, 256), (height, width))
+
     with SelfieSegmentation(model_selection=1) as selfie_segmentation:
         while cap.isOpened():
-            success, image = cap.read()
+            success, image = cap.read(image)
 
             if not success:
                 print("Ignoring empty camera frame.")
-                # If loading a video, use 'break' instead of 'continue'.
                 continue
+            image = cv2.flip(image, 1, image)
 
-            # Flip the image horizontally for a later selfie-view display, and convert
-            # the BGR image to RGB.
-            image = cv2.cvtColor(cv2.flip(image, 1), cv2.COLOR_BGR2RGB)
+            # Resize image to segmentation resolution
+            imageseg = cv2.resize(image, (256, 144), imageseg, interpolation=cv2.INTER_AREA)
+
+            # Convert to RGB for Selfie segmentation
+            imageseg = cv2.cvtColor(imageseg, cv2.COLOR_BGR2RGB)
             # To improve performance, optionally mark the image as not writeable to
             # pass by reference.
-            image.flags.writeable = False
-            results = selfie_segmentation.process(image)
+            imageseg.flags.writeable = False
+            results = selfie_segmentation.process(imageseg)
+            imageseg.flags.writeable = True
+            np.less_equal(results.segmentation_mask, 0.95, out=condition)
+            np.copyto(imageseg, 0, where=condition[:, :, np.newaxis])
 
-            image.flags.writeable = True
-            image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-
-            # Draw selfie segmentation on the background image.
-            # To improve segmentation around boundaries, consider applying a joint
-            # bilateral filter to "results.segmentation_mask" with "image".
-            condition = np.stack((results.segmentation_mask,) * 3, axis=-1) > 0.95
-            # The background can be customized.
-            #   a) Load an image (with the same width and height of the input image) to
-            #      be the background, e.g., bg_image = cv2.imread('/path/to/image/file')
-            #   b) Blur the input image by applying image filtering, e.g.,
-            #      bg_image = cv2.GaussianBlur(image,(55,55),0)
-            if bg_image is None:
-                bg_image = np.zeros(image.shape, dtype=np.uint8)
-            output_image = np.where(condition, image, bg_image)
+            # Create grayscale image
+            imager = cv2.resize(imageseg, (width, height), imager, interpolation=interp)
+            gray = cv2.cvtColor(imager, cv2.COLOR_RGB2GRAY, gray)
 
             stdscr.clear()
 
-            string = ascii_image(output_image, width, height)[:-1]
-            for idx, val in enumerate(string):
-                if not val:
-                    continue
-                stdscr.addstr(idx // width, idx % width, val, curses.color_pair(1))
+            string = ascii_image2(gray).ravel()[:-1]
+            for (idx,), val in np.ndenumerate(string):
+                addstr(idx // width, idx % width, val, pair1)
 
             now = time.perf_counter()
             delta += (now - perf_counter) * abs(args.updates_per_second)
             perf_counter = now
             update_matrix = delta >= 1
 
+            foreground2 = []
             for idx, (row, col) in enumerate(foreground):
-                if row < size[0] - 1:
-                    stdscr.addstr(
+                if row < height - 1:
+                    addstr(
                         row,
                         col,
-                        background[row * size[0] + col],
-                        curses.color_pair(1),
+                        background[row * height + col],
+                        pair1,
                     )
 
                     if update_matrix:
-                        foreground[idx] = (row + 1, col)
-                else:
-                    del foreground[idx]
+                        foreground2.append((row + 1, col))
+                    else:
+                        foreground2.append((row, col))
+            foreground = foreground2
 
             if update_matrix:
-                for _ in range(abs(args.letters)):
-                    dispense.append(random.randint(0, width - 1))
-
-                for idx, column in enumerate(dispense):
+                dispense_new = random.choices(range(0, width), k=abs(args.letters))
+                dispense2 = []
+                for idx, column in enumerate(chain(dispense, dispense_new)):
                     foreground.append((0, column))
-                    if not random.randint(0, args.probability - 1):
-                        del dispense[idx]
+                    if random.randint(0, args.probability - 1):
+                        dispense2.append(column)
+                dispense = dispense2
                 delta -= 1
 
             bg_refresh_counter -= 1
             if bg_refresh_counter <= 0:
-                background = rand_string(printable.strip(), height * width)
+                background = rand_string(printable_chars, height * width)
                 bg_refresh_counter = random.randint(3, 7)
 
             stdscr.refresh()
+            frame_counter += 1
+
+            # compute fps
+            curr = time.monotonic_ns()
+            if curr - time_counter > 1e9:
+                fps = frame_counter / (curr - time_counter) * 1e9
+                time_counter = curr
+                frame_counter = 0
+            if args.fps:
+                addstr(0, 0, f"FPS: {round(fps, 3)}")
+
 
             stdscr.nodelay(True)  # Don't block waiting for input.
             char_input = stdscr.getch()
@@ -184,6 +217,7 @@ def terminate(cap: Any, stdscr: Any) -> None:
     cap.release()
     cv2.destroyAllWindows()
 
+    curses.curs_set(True)
     stdscr.keypad(False)
     curses.echo()
     curses.endwin()
@@ -202,13 +236,13 @@ def init_curses() -> Any:
     return stdscr
 
 
-def rand_string(character_set: str, length: int) -> str:
+def rand_string(character_set: str, length: int) -> list:
     """
     Returns a random string.
     character_set -- the characters to choose from.
     length        -- the length of the string.
     """
-    return "".join(random.choice(character_set) for _ in range(length))
+    return random.choices(character_set, k=length)
 
 
 if __name__ == "__main__":
