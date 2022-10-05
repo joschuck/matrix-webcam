@@ -21,8 +21,8 @@ def ascii_image2(
     image: npt.NDArray[np.uint8], width: int, height: int, linebreak: bool = False
 ) -> str:
     """Turns a numpy image into rich-CLI ascii image"""
-    gray = cv2.cvtColor(cv2.resize(image, (width, height)), cv2.COLOR_BGR2GRAY)
-    gray = (gray / (256 / len(ASCII_CHARS))).astype(int)
+    #gray = cv2.cvtColor(cv2.resize(image, (width, height)), cv2.COLOR_BGR2GRAY)
+    gray = (image / (256 / len(ASCII_CHARS))).astype('uint8')
     gray = np.ascontiguousarray(np.take(ASCII_CHARS, gray))
     return gray.ravel()[:-1]
 
@@ -72,6 +72,14 @@ def main() -> None:
     args = parse_args()
 
     cap = cv2.VideoCapture(args.device)
+    cwidth = 1280
+    cheight = 720
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, cwidth)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, cheight)
+    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+    cap.set(cv2.CAP_PROP_FPS, 30)
+
+
     if not cap.isOpened():
         print("No VideoCapture found!")
         cap.release()
@@ -79,6 +87,8 @@ def main() -> None:
 
     # os.system("cls" if os.name == "nt" else "clear")
     stdscr = init_curses()
+    addstr = stdscr.addstr
+    pair1 = curses.color_pair(1)
 
     signal.signal(signal.SIGINT, lambda signal, frame: terminate(cap, stdscr))
 
@@ -100,45 +110,50 @@ def main() -> None:
     time_counter = time.monotonic_ns()
     fps = 0
 
-    bg_image: Optional[npt.NDArray[np.uint8]] = None
+
+    #pre-allocate some arrays
+    image = np.empty((cheight, cwidth, 3), dtype=np.uint8)
+    imager = np.empty((height, width, 3), dtype=np.uint8)
+    imageseg = np.empty_like(imager)
+    gray = np.empty((height, width), dtype=np.uint8)
+    bg_image = np.zeros_like(gray)
+
     with SelfieSegmentation(model_selection=1) as selfie_segmentation:
         while cap.isOpened():
-            success, image = cap.read()
+            success, image = cap.read(image)
 
             if not success:
                 print("Ignoring empty camera frame.")
-                # If loading a video, use 'break' instead of 'continue'.
                 continue
 
-            # Flip the image horizontally for a later selfie-view display, and convert
-            # the BGR image to RGB.
-            image = cv2.cvtColor(cv2.flip(image, 1), cv2.COLOR_BGR2RGB)
+            # Resize image to target resolution
+            imager = cv2.resize(image, (width, height), imager)
+            # Flip image horizontally
+            imager = cv2.flip(imager, 1, imager)
+
+            # Convert to RGB for Selfie segmentation
+            imageseg.flags.writeable = True
+            imageseg = cv2.cvtColor(imager, cv2.COLOR_BGR2RGB, imageseg)
             # To improve performance, optionally mark the image as not writeable to
             # pass by reference.
-            image.flags.writeable = False
-            results = selfie_segmentation.process(image)
+            imageseg.flags.writeable = False
+            results = selfie_segmentation.process(imageseg)
 
-            image.flags.writeable = True
-            image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+            # Create grayscale image
+            gray = cv2.cvtColor(imager, cv2.COLOR_BGR2GRAY, gray)
 
-            # Draw selfie segmentation on the background image.
-            # To improve segmentation around boundaries, consider applying a joint
-            # bilateral filter to "results.segmentation_mask" with "image".
-            condition = np.stack((results.segmentation_mask,) * 3, axis=-1) > 0.95
-            # The background can be customized.
-            #   a) Load an image (with the same width and height of the input image) to
-            #      be the background, e.g., bg_image = cv2.imread('/path/to/image/file')
-            #   b) Blur the input image by applying image filtering, e.g.,
-            #      bg_image = cv2.GaussianBlur(image,(55,55),0)
-            if bg_image is None:
-                bg_image = np.zeros(image.shape, dtype=np.uint8)
-            output_image = np.where(condition, image, bg_image)
+            # Resize and generate segmentation mask
+            condition = cv2.resize(results.segmentation_mask, (width, height), imageseg)
+            condition = condition <= 0.95
+            
+            # Copy background over image according to the segmentation
+            np.copyto(gray, bg_image, casting='no', where=condition)
 
             stdscr.clear()
 
-            string = ascii_image2(output_image, width, height)
-            for idx, val in enumerate(string):
-                stdscr.addstr(idx // width, idx % width, val, curses.color_pair(1))
+            string = ascii_image2(gray, width, height)
+            for (idx,), val in np.ndenumerate(string):
+                addstr(idx // width, idx % width, val, pair1)
 
             now = time.perf_counter()
             delta += (now - perf_counter) * abs(args.updates_per_second)
@@ -147,12 +162,12 @@ def main() -> None:
 
             foreground2 = []
             for idx, (row, col) in enumerate(foreground):
-                if row < size[0] - 1:
-                    stdscr.addstr(
+                if row < height - 1:
+                    addstr(
                         row,
                         col,
-                        background[row * size[0] + col],
-                        curses.color_pair(1),
+                        background[row * height + col],
+                        pair1,
                     )
 
                     if update_matrix:
@@ -186,7 +201,7 @@ def main() -> None:
                 time_counter = curr
                 frame_counter = 0
             if args.fps:
-                stdscr.addstr(0, 0, f"FPS: {round(fps, 3)}")
+                addstr(0, 0, f"FPS: {round(fps, 3)}")
 
 
             stdscr.nodelay(True)  # Don't block waiting for input.
