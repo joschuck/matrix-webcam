@@ -18,13 +18,12 @@ ASCII_CHARS = np.array([" ", "@", "#", "$", "%", "?", "*", "+", ";", ":", ",", "
 
 
 def ascii_image2(
-    image: npt.NDArray[np.uint8], width: int, height: int, linebreak: bool = False
+    image: npt.NDArray[np.uint8]
 ) -> str:
     """Turns a numpy image into rich-CLI ascii image"""
-    #gray = cv2.cvtColor(cv2.resize(image, (width, height)), cv2.COLOR_BGR2GRAY)
     gray = (image / (256 / len(ASCII_CHARS))).astype('uint8')
     gray = np.ascontiguousarray(np.take(ASCII_CHARS, gray))
-    return gray.ravel()[:-1]
+    return gray
 
 
 def parse_args() -> argparse.Namespace:
@@ -72,13 +71,6 @@ def main() -> None:
     args = parse_args()
 
     cap = cv2.VideoCapture(args.device)
-    cwidth = 1280
-    cheight = 720
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, cwidth)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, cheight)
-    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-    cap.set(cv2.CAP_PROP_FPS, 30)
-
 
     if not cap.isOpened():
         print("No VideoCapture found!")
@@ -112,11 +104,10 @@ def main() -> None:
 
 
     #pre-allocate some arrays
-    image = np.empty((cheight, cwidth, 3), dtype=np.uint8)
+    _, image = cap.read()
     imager = np.empty((height, width, 3), dtype=np.uint8)
     imageseg = np.empty_like(imager)
     gray = np.empty((height, width), dtype=np.uint8)
-    bg_image = np.zeros_like(gray)
 
     with SelfieSegmentation(model_selection=1) as selfie_segmentation:
         while cap.isOpened():
@@ -147,11 +138,11 @@ def main() -> None:
             condition = condition <= 0.95
             
             # Copy background over image according to the segmentation
-            np.copyto(gray, bg_image, casting='no', where=condition)
+            np.copyto(gray, 0, casting='no', where=condition)
 
             stdscr.clear()
 
-            string = ascii_image2(gray, width, height)
+            string = ascii_image2(gray).ravel()[:-1]
             for (idx,), val in np.ndenumerate(string):
                 addstr(idx // width, idx % width, val, pair1)
 
