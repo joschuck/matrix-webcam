@@ -26,6 +26,13 @@ def ascii_image2(
     return gray
 
 
+def interp_method(source, dst):
+    if source > dst:
+        return cv2.INTER_AREA
+    else:
+        return cv2.INTER_LINEAR
+
+
 def parse_args() -> argparse.Namespace:
     """Parses width and height in characters from CLI."""
     parser = argparse.ArgumentParser(description="matrix-webcam")
@@ -114,6 +121,7 @@ def main() -> None:
     # Final resolution arrays
     imager = np.empty((height, width, 3), dtype=np.uint8)
     gray = np.empty((height, width), dtype=np.uint8)
+    interp = interp_method((144, 256), (height, width))
 
     with SelfieSegmentation(model_selection=1) as selfie_segmentation:
         while cap.isOpened():
@@ -124,8 +132,8 @@ def main() -> None:
                 continue
             image = cv2.flip(image, 1, image)
 
-            # Resize image to target resolution
-            imageseg = cv2.resize(image, (256, 144), imager)
+            # Resize image to segmentation resolution
+            imageseg = cv2.resize(image, (256, 144), imageseg, interpolation=cv2.INTER_AREA)
 
             # Convert to RGB for Selfie segmentation
             imageseg = cv2.cvtColor(imageseg, cv2.COLOR_BGR2RGB)
@@ -138,7 +146,7 @@ def main() -> None:
             np.copyto(imageseg, 0, where=condition[:, :, np.newaxis])
 
             # Create grayscale image
-            imager = cv2.resize(imageseg, (width, height), imageseg)
+            imager = cv2.resize(imageseg, (width, height), imager, interpolation=interp)
             gray = cv2.cvtColor(imager, cv2.COLOR_RGB2GRAY, gray)
 
             stdscr.clear()
